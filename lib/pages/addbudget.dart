@@ -2,6 +2,7 @@ import 'package:budget_tracking_system/services/category.dart';
 import 'package:budget_tracking_system/services/onetimebudget.dart';
 import 'package:budget_tracking_system/services/periodicbudget.dart';
 import 'package:budget_tracking_system/services/record.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -11,14 +12,21 @@ class DisableFocusNode extends FocusNode {
 }
 
 class AddBudget extends StatefulWidget {
+  final String uid;
+  AddBudget({Key key, @required this.uid}) : super(key: key);
+
   @override
-  _AddBudgetState createState() => _AddBudgetState();
+  _AddBudgetState createState() => _AddBudgetState(uid);
 }
 
 class _AddBudgetState extends State<AddBudget> {
+  final String uid;
+  _AddBudgetState(this.uid);
+  var recordcollections = Firestore.instance.collection('users');
+
   // Initialized local variables for user input
   String title = "Untitled";
-  Category category = Category.list[0];
+  Category category = Category.expenseList[0];
   double amount = 0;
   DateTime startDate;
   DateTime endDate;
@@ -26,8 +34,8 @@ class _AddBudgetState extends State<AddBudget> {
   String budgetstatus;
 
   //Creates a list of items for DropdownButton category and account.
-  String currentSelectedCategory = "Food";
-  List<String> categoryTypes = ["Food", "Transport", "Entertainment"];
+  String currentSelectedCategory = Category.expenseList[0].name;
+  List<Category> categoryTypes = Category.expenseList;
 
   String currentSelectedType = "Periodic";
   List<String> budgetTypes = ["Periodic", "One-Time"];
@@ -44,11 +52,11 @@ class _AddBudgetState extends State<AddBudget> {
   TextEditingController _startDateEditingController = TextEditingController();
   TextEditingController _endDateEditingController = TextEditingController();
 
-   pickStartDate() async{
+  pickStartDate() async {
     DateTime date = await showDatePicker(
       context: context,
-      firstDate: DateTime(DateTime.now().year-5),
-      lastDate: DateTime(DateTime.now().year+5),
+      firstDate: DateTime(DateTime.now().year - 5),
+      lastDate: DateTime(DateTime.now().year + 5),
       initialDate: DateTime.now(),
     );
 
@@ -56,15 +64,16 @@ class _AddBudgetState extends State<AddBudget> {
       setState(() {
         _pickedStartDate = date;
         _startDateEditingController.text = df.format(_pickedStartDate);
+        startDate = _pickedStartDate;
       });
     }
   }
 
-     pickEndDate() async{
+  pickEndDate() async {
     DateTime date = await showDatePicker(
       context: context,
-      firstDate: DateTime(DateTime.now().year-5),
-      lastDate: DateTime(DateTime.now().year+5),
+      firstDate: DateTime(DateTime.now().year - 5),
+      lastDate: DateTime(DateTime.now().year + 5),
       initialDate: DateTime.now(),
     );
 
@@ -72,6 +81,7 @@ class _AddBudgetState extends State<AddBudget> {
       setState(() {
         _pickedEndDate = date;
         _endDateEditingController.text = df.format(_pickedEndDate);
+        endDate = _pickedEndDate;
       });
     }
   }
@@ -117,6 +127,7 @@ class _AddBudgetState extends State<AddBudget> {
                           onChanged: (newValue) {
                             setState(() {
                               currentSelectedInterval = newValue;
+                              interval = currentSelectedInterval;
                             });
                           },
                           items: intervalTypes.map((String value) {
@@ -172,9 +183,9 @@ class _AddBudgetState extends State<AddBudget> {
                       onTap: () {
                         pickStartDate();
                       },
-                      onChanged: (value) {
-                        startDate = DateTime.parse(value);
-                      },
+                      // onChanged: (value) {
+                      //   startDate = DateTime.parse(value);
+                      // },
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -210,9 +221,9 @@ class _AddBudgetState extends State<AddBudget> {
                       onTap: () {
                         pickEndDate();
                       },
-                      onChanged: (value) {
-                        endDate = DateTime.parse(value);
-                      },
+                      // onChanged: (value) {
+                      //   endDate = DateTime.parse(value);
+                      // },
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -443,19 +454,24 @@ class _AddBudgetState extends State<AddBudget> {
                                   onChanged: (newValue) {
                                     setState(() {
                                       currentSelectedCategory = newValue;
+                                      categoryTypes.forEach((element) {
+                                        if (element.name == newValue) {
+                                          category = element;
+                                        }
+                                      });
                                     });
                                   },
                                   //Map the items from categoryTypes lists into item menu dropdown.
-                                  items: categoryTypes.map((String value) {
+                                  items: categoryTypes.map((Category value) {
                                     return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
+                                      value: value.name,
+                                      child: Text(value.name),
                                     );
                                   }).toList(),
                                   //Style the dropdown items text.
                                   style: TextStyle(color: Colors.black),
                                   selectedItemBuilder: (BuildContext context) {
-                                    return categoryTypes.map((String value) {
+                                    return categoryTypes.map((Category value) {
                                       return Text(
                                         currentSelectedCategory,
                                         style: TextStyle(
@@ -552,68 +568,26 @@ class _AddBudgetState extends State<AddBudget> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0)),
                       onPressed: () {
-                        // if (currentSelectedType == "Periodic") {
-                        PeriodicBudget.add(PeriodicBudget(
-                            title: "pb1",
-                            category: Category.list[0],
-                            amount: 2000,
-                            interval: "Monthly",
-                            startDate: DateTime.utc(2020, 1, 1)));
-                        PeriodicBudget.add(PeriodicBudget(
-                            title: "pb2",
-                            category: Category.list[1],
-                            amount: 50,
-                            interval: "Weekly",
-                            startDate: DateTime.utc(2019, 1, 1)));
-                        PeriodicBudget.add(PeriodicBudget(
-                            title: "pb3",
-                            category: Category.list[0],
-                            amount: 10,
-                            interval: "Monthly",
-                            startDate: DateTime.utc(2021, 1, 1)));
-                        // } else {
-                        // OneTimeBudget.add(OneTimeBudget(
-                        //     title: "buget1",
-                        //     category: Category.list[0],
-                        //     amount: 30,
-                        //     startDate: DateTime.utc(2021, 1, 1),
-                        //     endDate: DateTime.utc(2021, 1, 10)));
-                        // OneTimeBudget.add(OneTimeBudget(
-                        //     title: "buget2",
-                        //     category: Category.list[0],
-                        //     amount: 21330,
-                        //     startDate: DateTime.utc(2019, 1, 2),
-                        //     endDate: DateTime.utc(2021, 1, 4)));
-                        // OneTimeBudget.add(OneTimeBudget(
-                        //     title: "buget3",
-                        //     category: Category.list[0],
-                        //     amount: 340,
-                        //     startDate: DateTime.utc(2021, 2, 1),
-                        //     endDate: DateTime.utc(2021, 2, 10)));
-                        //   OneTimeBudget.changeStatus();
-                        //   print(OneTimeBudget.list[0].budgetStatus);
-                        //   print(OneTimeBudget.list[1].budgetStatus);
-                        //   print(OneTimeBudget.list[2].budgetStatus);
-                        //   OneTimeBudget.returnList(DateTime.utc(2021, 1, 3));
-                        //   print(OneTimeBudget.activeList);
-                        //   print(DateTime.now().toUtc().month);
-                        //   OneTimeBudget.delete(2);
-                        // print(OneTimeBudget.list[2]);
-                        // OneTimeBudget.budgetRecordList(
-                        //     Category.list[0],
-                        //     DateTime.utc(2020, 1, 02),
-                        //     DateTime.utc(2020, 12, 21));
-                        // OneTimeBudget.calculateAmountUsed(
-                        //     Category.list[0],
-                        //     DateTime.utc(2020, 1, 2),
-                        //     DateTime.utc(2020, 12, 21));
-                        // OneTimeBudget.calculateAmountUsed();
-                        PeriodicBudget.calculateAmountUsed(
-                            DateTime.utc(2020, 1));
-                        print(PeriodicBudget.returnList(
-                            DateTime.utc(2019, 12, 30)));
-
-                        // }
+                        if (currentSelectedType == "Periodic") {
+                          PeriodicBudget.add(PeriodicBudget(
+                              uid: uid,
+                              title: title,
+                              category: category,
+                              amount: amount,
+                              interval: interval,
+                              save: true,
+                              startDate: DateTime.now()));
+                        } else {
+                          OneTimeBudget.add(OneTimeBudget(
+                              uid: uid,
+                              title: title,
+                              category: category,
+                              amount: amount,
+                              startDate: startDate,
+                              endDate: endDate,
+                              save: true));
+                        }
+                        Navigator.pop(context);
                       },
                       child: Text(
                         'Save',
