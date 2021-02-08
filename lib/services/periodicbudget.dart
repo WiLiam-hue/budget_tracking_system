@@ -190,20 +190,6 @@ class PeriodicBudget {
   }
 
   // return active budget list based on a datetime
-  static List<PeriodicBudget> returnActiveList(DateTime dateTime) {
-    _activeList = [];
-    _list.forEach((element) {
-      if (!element.startDate.isAfter(dateTime)) {
-        _activeList.add(element);
-      } else if (element.startDate.month == dateTime.month &&
-          element.startDate.year == dateTime.year) {
-        _activeList.add(element);
-      }
-    });
-    return _activeList;
-  }
-
-  // return active budget list based on a datetime
   static List<PeriodicBudget> returnList(DateTime dateTime, Category category) {
     _activeList = [];
     _list.forEach((element) {
@@ -256,23 +242,25 @@ class PeriodicBudget {
     return null;
   }
 
-  // static List findEachMonthAmount(PeriodicBudget budget) {
-  //   List<double> eachmonth = [];
-  //   for (int i = 1; i < 13; i++) {
-  //     double sum = 0;
-  //     List<Record> r = [];
-  //     Record.list.forEach((record) {
-  //       if (record.budget == budget && record.dateTime.month == i) {
-  //         r.add(record);
-  //       }
-  //     });
-  //     r.forEach((element) {
-  //       sum += element.amount;
-  //     });
-  //     eachmonth.add(sum);
-  //   }
-  //   return eachmonth;
-  // }
+  static List findEachMonthAmount(PeriodicBudget budget, DateTime dateTime) {
+    List<double> eachmonth = [];
+    for (int i = 1; i < 13; i++) {
+      double sum = 0;
+      List<Record> r = [];
+      Record.list.forEach((record) {
+        if (record.budget == budget &&
+            record.dateTime.month == i &&
+            record.dateTime.year == dateTime.year) {
+          r.add(record);
+        }
+      });
+      r.forEach((element) {
+        sum += element.amount;
+      });
+      eachmonth.add(sum);
+    }
+    return eachmonth;
+  }
 
   static List findEachDayAmount(PeriodicBudget budget, DateTime month) {
     List<double> eachday = [];
